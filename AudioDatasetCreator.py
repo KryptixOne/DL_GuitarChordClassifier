@@ -7,6 +7,7 @@ import os
 import argparse
 from scipy.io import wavfile
 import matplotlib.pyplot as plt
+from random import randint
 
 # import sys
 
@@ -67,6 +68,12 @@ def parse_args():
         type=int,
         help="Total Audio time in seconds (default: %(default)s)"
     )
+    parser.add_argument(
+        "--datasetDirectory",
+        default=r'C:/Users/Daniel/Desktop/GuitarProject/DLMethod/ChordAudio/AudioDataset/',
+        type=str,
+        help="Directory of dataset (default: %(default)s)"
+    )
 
     # args = parser.parse_args(argv)
     args = parser.parse_args()
@@ -113,6 +120,7 @@ def min_max_wav_data(audioPathList, pathToSaveDirectory):
 
 
 def create_audio_dataset(audioPathList,
+                         pathToDataDirectory,
                          totalAudioTime=900,
                          randomized=True
                          ):
@@ -123,25 +131,29 @@ def create_audio_dataset(audioPathList,
     :param randomized: Whether Audio Files should be used in a random order. Default = True
     :return: Dataset Audio file Path. Saves Audio File to that location.
     """
+
+    # create list housing the Audio Data and Sampling Rates
     audioData = list(range(len(audioPathList)))
     sampleRate = list(range(len(audioPathList)))
-
     for x in range(len(audioPathList)):
         fileNameBase = os.path.basename(audioPathList[x])
         fileNameNoExt = os.path.splitext(fileNameBase)
         fileName = fileNameNoExt[0]
-
         sampleRate[x], audioData[x] = wavfile.read(audioPathList[x])
-        tempaud = audioData[x]
 
-        # print(tempaud[:,:])
-        # exit()
-        # To plot data and check if it is being obtained correctly.
-        # plt.figure(x+1)
-        # plt.plot((audioData[x]))
-        # plt.title(fileName +' Audio signal in time', size= 16)
+    randomizedList = list(range(600))
 
-    # plt.show()
+    for x in range(600):
+        if x == 0:
+            audioDataSet= audioData[randint(0, len(audioPathList) - 1)]
+        else:
+            audioDataSet = np.concatenate((audioDataSet, audioData[randint(0, len(audioPathList) - 1)]),axis =0)
+    locOfDataset = os.path.join(pathToDataDirectory,'dataset.wav')
+
+    wavfile.write(locOfDataset, sampleRate[0], audioDataSet)
+
+    return locOfDataset
+
 
 
 def get_audio_paths(directoryOfAudio):
@@ -178,7 +190,7 @@ def main():
         # Get audio Paths from Directory
         wavAudioPathsScaled = get_audio_paths(args.locOfScaledWavFiles)
 
-    dataSetPath = create_audio_dataset(wavAudioPathsScaled, args.totalAudioTime, args.randomAudioFile)
+    dataSetPath = create_audio_dataset(wavAudioPathsScaled,args.datasetDirectory, args.totalAudioTime, args.randomAudioFile)
 
 
 if __name__ == '__main__':
