@@ -1,5 +1,5 @@
 import torch
-import sklearn as sk
+from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 import numpy as np
 from subprocess import call
@@ -7,11 +7,13 @@ import os
 import argparse
 from scipy.io import wavfile
 import matplotlib.pyplot as plt
-#import sys
+
+# import sys
 
 '''
 Note: ffmpeg needs to be installed in the directory running this script in order to operate successfully.
 '''
+
 
 # def parse_args(argv):
 def parse_args():
@@ -35,8 +37,8 @@ def parse_args():
         help="Batch Size used for training (default: %(default)s)"
     )
     parser.add_argument(
-        "--pathToSaveAudio",
-        default=r'C:/Users/Daniel/Desktop/GuitarProject/DLMethod/ChordAudio/AudioWav/',
+        "--pathToSaveUnscaledAudio",
+        default=r'C:/Users/Daniel/Desktop/GuitarProject/DLMethod/ChordAudio/AudioWavUnscaled/',
         type=str,
         help="Location to save created Audio Files (default: %(default)s)"
     )
@@ -53,8 +55,8 @@ def parse_args():
         help="Whether dataset and audio files need to be created (default: %(default)s)"
     )
     parser.add_argument(
-        "--locOfWavFiles",
-        default=r'C:/Users/Daniel/Desktop/GuitarProject/DLMethod/ChordAudio/AudioWav/',
+        "--locOfScaledWavFiles",
+        default=r'C:/Users/Daniel/Desktop/GuitarProject/DLMethod/ChordAudio/AudioWavScaled/',
         type=str,
         help="Directory containing the usable wave Audio files. Usually the same as the save location. "
              + "(default: %(default)s)"
@@ -77,20 +79,37 @@ def convert_mp3_to_wav(audioPathList,
     :param audioPathList: List Containing all audio paths
     :return: NewAudioPaths, a list of new audioPaths. Saves converted files to desired directory
     """
-    NewAudioPaths = range(audioPathList)
-    for x in range(len(audioPathList)):
+    newAudioPaths = list(range(len(audioPathList)))
 
+    for x in range(len(audioPathList)):
         curAudioPath = str(audioPathList[x])
         fileNameBase = os.path.basename(curAudioPath)
         fileNameNoExt = os.path.splitext(fileNameBase)
         fileName = fileNameNoExt[0]
         newPath = pathToSave + str(fileName) + ".wav"
-        NewAudioPaths[x] = newPath
+        newAudioPaths[x] = newPath
 
         command = "ffmpeg -i " + curAudioPath + " -ab 160k -ac 2 -ar 44100 -vn " + newPath
         call(command, shell=True)
 
-    return NewAudioPaths
+    return newAudioPaths
+
+
+def min_max_wav_data(audioPathList, pathToSaveDirectory):
+    audioData = list(range(len(audioPathList)))
+    sampleRate = list(range(len(audioPathList)))
+
+    for x in range(len(audioPathList)):
+        fileNameBase = os.path.basename(audioPathList[x])
+        fileNameNoExt = os.path.splitext(fileNameBase)
+        fileName = fileNameNoExt[0] + '.wav'
+
+        scaler = MinMaxScaler(feature_range=(-1, 1))
+        sampleRate[x], audioTempData = wavfile.read(audioPathList[x])
+        audioData[x] = scaler.fit_transform(audioTempData)
+
+        saveFileLoc = os.path.join(pathToSaveDirectory, fileName)
+        wavfile.write(saveFileLoc, sampleRate[x], audioData[x])
 
 
 def create_audio_dataset(audioPathList,
@@ -108,28 +127,26 @@ def create_audio_dataset(audioPathList,
     sampleRate = list(range(len(audioPathList)))
 
     for x in range(len(audioPathList)):
-
         fileNameBase = os.path.basename(audioPathList[x])
         fileNameNoExt = os.path.splitext(fileNameBase)
         fileName = fileNameNoExt[0]
 
         sampleRate[x], audioData[x] = wavfile.read(audioPathList[x])
-        '''
-        #To plot data and check if it is being obtained correctly.
-        plt.figure(x+1)
-        plt.plot((audioData[x]))
-        plt.title(fileName +' Audio signal in time', size= 16)
-        '''
+        tempaud = audioData[x]
 
-    #plt.show()
+        # print(tempaud[:,:])
+        # exit()
+        # To plot data and check if it is being obtained correctly.
+        # plt.figure(x+1)
+        # plt.plot((audioData[x]))
+        # plt.title(fileName +' Audio signal in time', size= 16)
 
-
-
-
+    # plt.show()
 
 
 def get_audio_paths(directoryOfAudio):
     """
+    Should be already scaled audio
     :param directoryOfAudio: audio directory of WAV files
     :return: List of audio file paths
     """
@@ -153,14 +170,15 @@ def main():
                          r'C:\Users\Daniel\Desktop\GuitarProject\DLMethod\ChordAudio\F7.mp3',
                          r'C:\Users\Daniel\Desktop\GuitarProject\DLMethod\ChordAudio\G7.mp3'
                          ]
-        pathToSave = args.pathToSaveAudio
-        wavAudioPaths = convert_mp3_to_wav(mp3AudioPaths, pathToSave)
-        create_audio_dataset(wavAudioPaths)
+        pathToSave = args.pathToSaveUnscaledAudio
+        wavAudioPathsUnscaled = convert_mp3_to_wav(mp3AudioPaths, pathToSave)
+        wavAudioPathsScaled = min_max_wav_data(wavAudioPathsUnscaled, args.locOfScaledWavFiles)
+
     else:
         # Get audio Paths from Directory
-        wavAudioPaths = get_audio_paths(args.locOfWavFiles)
+        wavAudioPathsScaled = get_audio_paths(args.locOfScaledWavFiles)
 
-    dataSetPath = create_audio_dataset (wavAudioPaths, args.totalAudioTime, args.randomAudioFile)
+    dataSetPath = create_audio_dataset(wavAudioPathsScaled, args.totalAudioTime, args.randomAudioFile)
 
 
 if __name__ == '__main__':
