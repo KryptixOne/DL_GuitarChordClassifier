@@ -5,6 +5,8 @@ import numpy as np
 from subprocess import call
 import os
 import argparse
+from scipy.io import wavfile
+import matplotlib.pyplot as plt
 #import sys
 
 '''
@@ -102,6 +104,28 @@ def create_audio_dataset(audioPathList,
     :param randomized: Whether Audio Files should be used in a random order. Default = True
     :return: Dataset Audio file Path. Saves Audio File to that location.
     """
+    audioData = list(range(len(audioPathList)))
+    sampleRate = list(range(len(audioPathList)))
+
+    for x in range(len(audioPathList)):
+
+        fileNameBase = os.path.basename(audioPathList[x])
+        fileNameNoExt = os.path.splitext(fileNameBase)
+        fileName = fileNameNoExt[0]
+
+        sampleRate[x], audioData[x] = wavfile.read(audioPathList[x])
+        '''
+        #To plot data and check if it is being obtained correctly.
+        plt.figure(x+1)
+        plt.plot((audioData[x]))
+        plt.title(fileName +' Audio signal in time', size= 16)
+        '''
+
+    #plt.show()
+
+
+
+
 
 
 def get_audio_paths(directoryOfAudio):
