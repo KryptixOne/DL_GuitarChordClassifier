@@ -150,6 +150,16 @@ def create_audio_dataset(audioPathList,
             audioDataSet = np.concatenate((audioDataSet, audioData[randint(0, len(audioPathList) - 1)]),axis =0)
     locOfDataset = os.path.join(pathToDataDirectory,'dataset.wav')
 
+    '''
+    think i can create it with something simple like this.
+    or get size of audiodata added and autofill it with a string.
+    then we can print it.
+    So no for loop is created.
+    
+    ListOfDatalabel =[]
+    for x in audioData(randomint):
+         ListofDatalabel = Append filename per sampled size
+    '''
     wavfile.write(locOfDataset, sampleRate[0], audioDataSet)
 
     return locOfDataset
