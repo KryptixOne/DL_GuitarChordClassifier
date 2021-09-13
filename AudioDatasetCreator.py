@@ -157,15 +157,16 @@ def create_audio_dataset(audioPathList,
             tempVal = audioData[tempRand]
             audioDataSet = np.concatenate((audioDataSet, tempVal), axis=0)
             labelDataSet = labelDataSet + [nameIndexList[tempRand]] * tempVal.shape[0]
+
     locOfDatasetWav = os.path.join(pathToDataDirectory, 'dataset.wav')
     locOfDatasetCsv = os.path.join(pathToDataDirectory, 'dataset.csv')
-    dfLabelDataSet = pd.DataFrame (labelDataSet)
-    dfLabelDataSet = dfLabelDataSet.rename(columns={0:'ChordPlayed'})
+    dfLabelDataSet = pd.DataFrame(labelDataSet)
+    dfLabelDataSet = dfLabelDataSet.rename(columns={0: 'ChordPlayed'})
 
     dfLabelDataSet.to_csv(locOfDatasetCsv)
     wavfile.write(locOfDatasetWav, sampleRate[0], audioDataSet)
 
-    return locOfDatasetWav,locOfDatasetCsv
+    return locOfDatasetWav, locOfDatasetCsv
 
 
 def get_audio_paths(directoryOfAudio):
@@ -202,8 +203,10 @@ def main():
         # Get audio Paths from Directory
         wavAudioPathsScaled = get_audio_paths(args.locOfScaledWavFiles)
 
-    dataSetPathWav, dataSetPathCsv = create_audio_dataset(wavAudioPathsScaled, args.datasetDirectory, args.totalAudioTime,
-                                       args.randomAudioFile)
+    dataSetPathWav, dataSetPathCsv = create_audio_dataset(wavAudioPathsScaled,
+                                                          args.datasetDirectory,
+                                                          args.totalAudioTime,
+                                                          args.randomAudioFile)
 
 
 if __name__ == '__main__':
