@@ -129,41 +129,43 @@ def create_audio_dataset(audioPathList,
     :param audioPathList: List containing all the paths to the usable audio files/clips
     :param totalAudioTime: Number of seconds for the output to be. Default = 900 seconds
     :param randomized: Whether Audio Files should be used in a random order. Default = True
-    :return: Dataset Audio file Path. Saves Audio File to that location.
+    :return: Dataset Audio file Path and respective labels path based on sampling rate. Saves Audio File to that location.
     """
 
-    # create list housing the Audio Data and Sampling Rates
+    # create list housing the Audio Data, labels and Sampling Rates
+
     audioData = list(range(len(audioPathList)))
     sampleRate = list(range(len(audioPathList)))
+    nameIndexList = list(range(len(audioPathList)))
+
     for x in range(len(audioPathList)):
         fileNameBase = os.path.basename(audioPathList[x])
         fileNameNoExt = os.path.splitext(fileNameBase)
         fileName = fileNameNoExt[0]
-        sampleRate[x], audioData[x] = wavfile.read(audioPathList[x])
 
-    randomizedList = list(range(600))
+        nameIndexList[x] = str(fileName)
+        sampleRate[x], audioData[x] = wavfile.read(audioPathList[x])
 
     for x in range(600):
         if x == 0:
-            audioDataSet= audioData[randint(0, len(audioPathList) - 1)]
+            tempRand = randint(0, len(audioPathList) - 1)
+            tempVal = audioData[tempRand]
+            audioDataSet = tempVal
+            labelDataSet = [nameIndexList[tempRand]] * (tempVal.shape[0])
         else:
-            audioDataSet = np.concatenate((audioDataSet, audioData[randint(0, len(audioPathList) - 1)]),axis =0)
-    locOfDataset = os.path.join(pathToDataDirectory,'dataset.wav')
+            tempRand = randint(0, len(audioPathList) - 1)
+            tempVal = audioData[tempRand]
+            audioDataSet = np.concatenate((audioDataSet, tempVal), axis=0)
+            labelDataSet = labelDataSet + [nameIndexList[tempRand]] * tempVal.shape[0]
+    locOfDatasetWav = os.path.join(pathToDataDirectory, 'dataset.wav')
+    locOfDatasetCsv = os.path.join(pathToDataDirectory, 'dataset.csv')
+    dfLabelDataSet = pd.DataFrame (labelDataSet)
+    dfLabelDataSet = dfLabelDataSet.rename(columns={0:'ChordPlayed'})
 
-    '''
-    think i can create it with something simple like this.
-    or get size of audiodata added and autofill it with a string.
-    then we can print it.
-    So no for loop is created.
-    
-    ListOfDatalabel =[]
-    for x in audioData(randomint):
-         ListofDatalabel = Append filename per sampled size
-    '''
-    wavfile.write(locOfDataset, sampleRate[0], audioDataSet)
+    dfLabelDataSet.to_csv(locOfDatasetCsv)
+    wavfile.write(locOfDatasetWav, sampleRate[0], audioDataSet)
 
-    return locOfDataset
-
+    return locOfDatasetWav,locOfDatasetCsv
 
 
 def get_audio_paths(directoryOfAudio):
@@ -200,7 +202,8 @@ def main():
         # Get audio Paths from Directory
         wavAudioPathsScaled = get_audio_paths(args.locOfScaledWavFiles)
 
-    dataSetPath = create_audio_dataset(wavAudioPathsScaled,args.datasetDirectory, args.totalAudioTime, args.randomAudioFile)
+    dataSetPathWav, dataSetPathCsv = create_audio_dataset(wavAudioPathsScaled, args.datasetDirectory, args.totalAudioTime,
+                                       args.randomAudioFile)
 
 
 if __name__ == '__main__':
